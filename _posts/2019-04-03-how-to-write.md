@@ -55,7 +55,7 @@ train_data[['Pclass','Survived']].groupby(['Pclass']).mean().plot.bar()
 # 船舱，性别与生存的关系作图
 train_data[['Sex','Pclass','Survived']].groupby(['Pclass','Sex']).mean().plot.bar()
 
-#其次看一下仓位因素
+# 其次看一下仓位因素
 fig = plt.figure()
 
 Us =train_data.Pclass[train_data.Survived == 0].value_counts()
@@ -74,7 +74,7 @@ plt.ylabel("Number of people")
 
 plt.xticks(rotation = 0)
 '''
-#仓位与年龄的关系
+# 仓位与年龄的关系
 Us =train_data.Age[train_data.Survived == 0].value_counts()
 
 S = train_data.Age[train_data.Survived == 1].value_counts()
@@ -91,7 +91,7 @@ plt.ylabel("Number of people")
 
 plt.xticks(rotation = 0)
 
-#港口与生存的关系
+# 港口与生存的关系
 
 sns.countplot('Embarked',hue='Survived',data=train_data)
 
