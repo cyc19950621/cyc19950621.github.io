@@ -1,0 +1,259 @@
+---
+layout: post
+title: kaggle项目：使用随机森林模型进行泰坦尼克号生存预测   
+date: 2019-4-03 
+categories: blog
+tags: [kaggle,机器学习,随机森林]
+description: 文章金句。
+---
+泰坦尼克号是一个入门的机器学习项目，通过这个项目了解机器学习的基本方法和数据分析的方法
+
+
+import re
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import warnings
+warnings.filterwarnings("ignore")
+#导入数据
+train_data = pd.read_csv(r'C:\Users\Administrator\Desktop\taitanic\train.csv')
+test_data = pd.read_csv(r'C:\Users\Administrator\Desktop\taitanic\test.csv')
+#总体数据信息
+train_data.info()
+test_data.info()
+sum_data = train_data.append(test_data)
+psg_out_id = test_data['PassengerId']
+#train_data['Cabin'] = train_data.Cabin.fillna('U0') # 空余上船位置定义
+'''
+#随机森林填充年龄
+from sklearn.ensemble import RandomForestRegressor
+#choose training data to predict age
+age_df = train_data[['Age','Survived','Fare', 'Parch', 'SibSp', 'Pclass']]
+age_df_notnull = age_df.loc[(train_data['Age'].notnull())]
+age_df_isnull = age_df.loc[(train_data['Age'].isnull())]
+X = age_df_notnull.values[:,1:]
+Y = age_df_notnull.values[:,0]
+# use RandomForestRegression to train data
+RFR = RandomForestRegressor(n_estimators=1000, n_jobs=-1)
+RFR.fit(X,Y)
+predictAges = RFR.predict(age_df_isnull.values[:,1:])
+train_data.loc[train_data['Age'].isnull(), ['Age']]= predictAges
+'''
+
+train_data['Survived'].value_counts().plot.pie(autopct='%0.9f%%') #总体生存比例
+
+#绘图 plt.show()
+print(train_data.groupby(['Sex','Survived'])['Survived'].count())#性别和生存关系
+print(train_data.groupby(['Sex','Pclass','Survived'])['Survived'].count())#船舱，性别与生存的关系
+
+
+train_data[['Sex','Survived']].groupby(['Sex']).mean().plot.bar()#作图
+train_data[['Pclass','Survived']].groupby(['Pclass']).mean().plot.bar()#船舱与生存的关系
+train_data[['Sex','Pclass','Survived']].groupby(['Pclass','Sex']).mean().plot.bar()#船舱，性别与生存的关系作图
+
+
+#年龄与生存的关系
+'''
+#其次看一下仓位因素
+fig = plt.figure()
+Us =train_data.Pclass[train_data.Survived == 0].value_counts()
+S = train_data.Pclass[train_data.Survived == 1].value_counts()
+df = pd.DataFrame({'Survived':S, 'Unsurvived':Us})
+df.plot(kind='bar', stacked=True)
+plt.title("The rescue of each passenger level ")
+plt.xlabel("Level") 
+plt.ylabel("Number of people") 
+plt.xticks(rotation = 0)
+'''
+#仓位与年龄的关系
+Us =train_data.Age[train_data.Survived == 0].value_counts()
+S = train_data.Age[train_data.Survived == 1].value_counts()
+df = pd.DataFrame({'Survived':S, 'Unsurvived':Us})
+df.plot(kind='bar', stacked=True)
+plt.title("Age to Survrive ")
+plt.xlabel("Age") 
+plt.ylabel("Number of people") 
+plt.xticks(rotation = 0)
+
+#港口与生存的关系
+
+sns.countplot('Embarked',hue='Survived',data=train_data)
+plt.title('Embarked and Survived')
+#回归森林预测年龄
+from sklearn.ensemble import RandomForestRegressor
+#choose training data to predict age
+age_df = sum_data[['Age','Title','Parch', 'SibSp','Pclass']]
+age_df_notnull = age_df.loc[(sum_data['Age'].notnull())]
+age_df_isnull = age_df.loc[(sum_data['Age'].isnull())]
+X = age_df_notnull.values[:,1:]
+Y = age_df_notnull.values[:,0]
+# use RandomForestRegression to train data
+RFR = RandomForestRegressor(n_estimators=1000, n_jobs=-1)
+RFR.fit(X,Y)
+predictAges = RFR.predict(age_df_isnull.values[:,1:])
+sum_data.loc[sum_data['Age'].isnull(), ['Age']]= predictAges
+
+#年龄分组
+bins = [0, 12, 18, 65, 100]
+sum_data['Age_group'] =sum_data['Age']
+sum_data.loc[sum_data['Age_group'] >60,'Age_group'] = -4
+sum_data.loc[sum_data['Age_group'] >30,'Age_group'] = -3
+sum_data.loc[sum_data['Age_group'] >18,'Age_group'] = -2
+sum_data.loc[sum_data['Age_group'] >0,'Age_group'] = 1
+sum_data.loc[sum_data['Age_group'] ==-2,'Age_group'] = 2
+sum_data.loc[sum_data['Age_group'] ==-3,'Age_group'] = 3
+sum_data.loc[sum_data['Age_group'] ==-4,'Age_group'] = 4
+pd.concat([sum_data,sum_data['Age_group']])
+#亲友人数和生存的关系
+n,ax=plt.subplots(1,2,figsize=(18,8))
+train_data[['Parch','Survived']].groupby(['Parch']).mean().plot.bar(ax=ax[0])
+ax[0].set_title('Parch and Survived')
+train_data[['SibSp','Survived']].groupby(['SibSp']).mean().plot.bar(ax=ax[1])
+ax[1].set_title('SibSp and Survived')
+#称呼与生存
+sum_data = train_data.append(test_data)
+sum_data['Title'] = sum_data['Name'].map(lambda x: re.compile(", (.*?)\.").findall(x)[0])
+title_Dict = {}
+title_Dict.update(dict.fromkeys(['Capt', 'Col', 'Major', 'Dr', 'Rev'], 'Officer'))
+title_Dict.update(dict.fromkeys(['Don', 'the Countess', 'Dona', 'Lady'], 'Royalty'))
+title_Dict.update(dict.fromkeys(['Mme', 'Ms', 'Mrs','Mlle', 'Miss'], 'Mrs'))
+title_Dict.update(dict.fromkeys(['Master','Mr', 'Sir'], 'Mr'))
+title_Dict.update(dict.fromkeys(['Jonkheer'], 'Master'))
+sum_data['Title'] = sum_data['Title'].map(title_Dict)
+
+sum_data['Title'] = pd.factorize(sum_data['Title'])[0]
+'''
+title_dummies_df = pd.get_dummies(sum_data['Title'], prefix=sum_data[['Title']].columns[0])
+sum_data = pd.concat([sum_data, title_dummies_df], axis=1)'''
+
+sum_data['Cabin'].loc[(sum_data['Cabin'].notnull())] = 1
+sum_data['Cabin'].loc[(sum_data['Cabin'].isnull())] = 0
+
+train_data =sum_data[:891]
+train_data[['Title','Survived']].groupby(['Title']).mean().plot.bar()
+train_data[['Cabin','Survived']].groupby(['Cabin']).mean().plot.bar()#作图
+plt.show()
+
+import pandas as pd 
+import  numpy as np 
+import re
+import matplotlib.pyplot as plt
+import seaborn as sns
+import datetime
+train_data=pd.read_csv(r'C:\Users\Administrator\Desktop\taitanic\train.csv')      #读取文件titanic_train数据集
+test_data = pd.read_csv(r'C:\Users\Administrator\Desktop\taitanic\test.csv')
+sum_data = train_data.append(test_data)
+psg_out_id = test_data['PassengerId']
+
+##名字开头
+sum_data['Title'] = sum_data['Name'].map(lambda x: re.compile(", (.*?)\.").findall(x)[0])
+title_Dict = {}
+title_Dict.update(dict.fromkeys(['Capt', 'Col', 'Major', 'Dr', 'Rev'], 'Officer'))
+title_Dict.update(dict.fromkeys(['Don', 'the Countess', 'Dona', 'Lady'], 'Royalty'))
+title_Dict.update(dict.fromkeys(['Mme', 'Ms', 'Mrs','Mlle', 'Miss'], 'Mrs'))
+title_Dict.update(dict.fromkeys(['Master','Mr', 'Sir'], 'Mr'))
+title_Dict.update(dict.fromkeys(['Jonkheer'], 'Master'))
+sum_data['Title'] = sum_data['Title'].map(title_Dict)
+sum_data['Title'] = pd.factorize(sum_data['Title'])[0]
+
+#亲友
+sum_data['FAF']= sum_data['SibSp'] + sum_data['Parch']
+pd.concat([sum_data,sum_data['FAF']])
+#性别替换
+sum_data.loc[sum_data['Sex']=='male','Sex'] = 0
+sum_data.loc[sum_data['Sex']=='female','Sex'] = 1
+#上船位置
+sum_data['Embarked'] = sum_data['Embarked'].fillna('S')
+sum_data.loc[sum_data['Embarked'] == 'S','Embarked'] =0
+sum_data.loc[sum_data['Embarked'] == 'C','Embarked'] = 1
+sum_data.loc[sum_data['Embarked'] == 'Q','Embarked'] = 1
+#船舱
+sum_data['Cabin'].loc[(sum_data['Cabin'].notnull())] = 1
+sum_data['Cabin'].loc[(sum_data['Cabin'].isnull())] = 0
+#票
+sum_data['Fare'] = sum_data[['Fare']].fillna(sum_data.groupby('Pclass').transform(np.mean))
+
+#等级
+
+sum_data.loc[sum_data['Pclass'] == 1,'Pclass'] =1
+sum_data.loc[sum_data['Pclass'] == 2,'Pclass'] = 0
+sum_data.loc[sum_data['Pclass'] == 3,'Pclass'] = -1
+
+#回归森林预测年龄
+from sklearn.ensemble import RandomForestRegressor
+#choose training data to predict age
+age_df = sum_data[['Age','Title','Parch', 'SibSp','Pclass']]
+age_df_notnull = age_df.loc[(sum_data['Age'].notnull())]
+age_df_isnull = age_df.loc[(sum_data['Age'].isnull())]
+X = age_df_notnull.values[:,1:]
+Y = age_df_notnull.values[:,0]
+# use RandomForestRegression to train data
+RFR = RandomForestRegressor(n_estimators=1000, n_jobs=-1)
+RFR.fit(X,Y)
+predictAges = RFR.predict(age_df_isnull.values[:,1:])
+sum_data.loc[sum_data['Age'].isnull(), ['Age']]= predictAges
+
+#年龄分组
+bins = [0, 12, 18, 65, 100]
+sum_data['Age_group'] =sum_data['Age']
+sum_data.loc[sum_data['Age_group']  > 65,'Age_group'] = -4
+sum_data.loc[sum_data['Age_group'] >30,'Age_group'] = -3
+sum_data.loc[sum_data['Age_group'] >15,'Age_group'] = -2
+sum_data.loc[sum_data['Age_group'] >0,'Age_group'] = 1
+sum_data.loc[sum_data['Age_group'] ==-2,'Age_group'] = 0
+sum_data.loc[sum_data['Age_group'] ==-3,'Age_group'] = 0
+sum_data.loc[sum_data['Age_group'] ==-4,'Age_group'] = -1
+pd.concat([sum_data,sum_data['Age_group']])
+#年龄归一化
+from sklearn import preprocessing
+assert np.size(sum_data['Age']) == 1309
+# StandardScaler will subtract the mean from each value then scale to the unit variance
+scaler = preprocessing.StandardScaler()
+sum_data['Age_scaled'] = scaler.fit_transform(sum_data['Age'].values.reshape(-1,1))
+assert np.size(sum_data['Fare']) == 1309
+scaler = preprocessing.StandardScaler()
+sum_data['Fare_scaled'] = scaler.fit_transform(sum_data['Fare'].values.reshape(-1,1))
+
+
+#随机森林决策树
+from sklearn import model_selection
+from sklearn.model_selection import KFold
+from sklearn.ensemble import RandomForestClassifier
+#两组数据分开
+traindata =sum_data[:891]
+testdata = sum_data[891:]
+#这里后面的samples不要少写一个“s”
+#n_estimators是决策树的个数，min_samples_split是根据属性划分节点时，每个划分最少的样本数。min_samples_leaf:叶子节点最少的样本数。
+#predictors = ['Sex','Title','Age','Age_group','FAF','Embarked','Cabin','Fare']
+#predictors = ['Sex','Title','Age_scaled','Age_group','FAF','Embarked','Cabin','Fare_scaled']
+#predictors = ['Pclass','Age_scaled','Age_group','SibSp', 'Parch','Fare','Embarked','Title','Cabin','FAF','Sex']
+predictors = ['Pclass','Age_scaled','Age_group','SibSp', 'Parch','Fare','Embarked','Title','Cabin','FAF','Sex']
+UseFlag = traindata['Survived'].values
+UseFeature = traindata[predictors].values
+rf = RandomForestClassifier(random_state=1,n_estimators=100,min_samples_split=9,min_samples_leaf=2)
+rf.fit(UseFeature,UseFlag)#进行模型的训练  
+
+temp = rf.predict(UseFeature)
+TestFeature = testdata[predictors].values
+
+temp = rf.predict(TestFeature)
+testdata['Survived'] = temp
+outdata = testdata[['PassengerId','Survived']]#提取出需要的列
+outdata.to_csv(r"C:\Users\Administrator\Desktop\taitanic\RF5.csv",index=False,header=True)#保存数据集
+
+#模型评价
+#pd.DataFrame({"columns":list(UseFeature.tolist())[1:], "coef":list(temp.tolist())})
+
+
+
+
+
+
+
+
+
+
+
+
+
