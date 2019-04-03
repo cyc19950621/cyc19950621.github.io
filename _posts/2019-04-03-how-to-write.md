@@ -7,79 +7,99 @@ tags: [kaggle,机器学习,随机森林]
 description: 文章金句。
 ---
 泰坦尼克号是一个入门的机器学习项目，通过这个项目了解机器学习的基本方法和数据分析的方法
-
+首先进行数据的分析和清洗
 
 import re
+
 import numpy as np
+
 import pandas as pd
+
 import matplotlib.pyplot as plt
+
 import seaborn as sns
+
 import warnings
+
 warnings.filterwarnings("ignore")
-#导入数据
+
+# 导入数据
+
 train_data = pd.read_csv(r'C:\Users\Administrator\Desktop\taitanic\train.csv')
+
 test_data = pd.read_csv(r'C:\Users\Administrator\Desktop\taitanic\test.csv')
-#总体数据信息
+
+# 总体数据信息
+
 train_data.info()
+
 test_data.info()
+
 sum_data = train_data.append(test_data)
+
 psg_out_id = test_data['PassengerId']
-#train_data['Cabin'] = train_data.Cabin.fillna('U0') # 空余上船位置定义
-'''
-#随机森林填充年龄
-from sklearn.ensemble import RandomForestRegressor
-#choose training data to predict age
-age_df = train_data[['Age','Survived','Fare', 'Parch', 'SibSp', 'Pclass']]
-age_df_notnull = age_df.loc[(train_data['Age'].notnull())]
-age_df_isnull = age_df.loc[(train_data['Age'].isnull())]
-X = age_df_notnull.values[:,1:]
-Y = age_df_notnull.values[:,0]
-# use RandomForestRegression to train data
-RFR = RandomForestRegressor(n_estimators=1000, n_jobs=-1)
-RFR.fit(X,Y)
-predictAges = RFR.predict(age_df_isnull.values[:,1:])
-train_data.loc[train_data['Age'].isnull(), ['Age']]= predictAges
-'''
+# 空余上船位置定义
 
-train_data['Survived'].value_counts().plot.pie(autopct='%0.9f%%') #总体生存比例
+#train_data['Cabin'] = train_data.Cabin.fillna('U0') 
+# 开始数据分析
+# 总体生存比例
+train_data['Survived'].value_counts().plot.pie(autopct='%0.9f%%') 
+# 性别和生存关系
+print(train_data.groupby(['Sex','Survived'])['Survived'].count())
+# 船舱，性别与生存的关系
+print(train_data.groupby(['Sex','Pclass','Survived'])['Survived'].count())
+# 作图 性别和生存
+train_data[['Sex','Survived']].groupby(['Sex']).mean().plot.bar()
+# 船舱与生存的关系
+train_data[['Pclass','Survived']].groupby(['Pclass']).mean().plot.bar()
+# 船舱，性别与生存的关系作图
+train_data[['Sex','Pclass','Survived']].groupby(['Pclass','Sex']).mean().plot.bar()
 
-#绘图 plt.show()
-print(train_data.groupby(['Sex','Survived'])['Survived'].count())#性别和生存关系
-print(train_data.groupby(['Sex','Pclass','Survived'])['Survived'].count())#船舱，性别与生存的关系
-
-
-train_data[['Sex','Survived']].groupby(['Sex']).mean().plot.bar()#作图
-train_data[['Pclass','Survived']].groupby(['Pclass']).mean().plot.bar()#船舱与生存的关系
-train_data[['Sex','Pclass','Survived']].groupby(['Pclass','Sex']).mean().plot.bar()#船舱，性别与生存的关系作图
-
-
-#年龄与生存的关系
-'''
 #其次看一下仓位因素
 fig = plt.figure()
+
 Us =train_data.Pclass[train_data.Survived == 0].value_counts()
+
 S = train_data.Pclass[train_data.Survived == 1].value_counts()
+
 df = pd.DataFrame({'Survived':S, 'Unsurvived':Us})
+
 df.plot(kind='bar', stacked=True)
+
 plt.title("The rescue of each passenger level ")
+
 plt.xlabel("Level") 
+
 plt.ylabel("Number of people") 
+
 plt.xticks(rotation = 0)
 '''
 #仓位与年龄的关系
 Us =train_data.Age[train_data.Survived == 0].value_counts()
+
 S = train_data.Age[train_data.Survived == 1].value_counts()
+
 df = pd.DataFrame({'Survived':S, 'Unsurvived':Us})
+
 df.plot(kind='bar', stacked=True)
+
 plt.title("Age to Survrive ")
+
 plt.xlabel("Age") 
+
 plt.ylabel("Number of people") 
+
 plt.xticks(rotation = 0)
 
 #港口与生存的关系
 
 sns.countplot('Embarked',hue='Survived',data=train_data)
+
 plt.title('Embarked and Survived')
+# 作图
+plt.show()
+----------------------------------------------------------------------------------------------------------
+
 #回归森林预测年龄
 from sklearn.ensemble import RandomForestRegressor
 #choose training data to predict age
