@@ -18,54 +18,55 @@ description: 文章金句。
 ## 2.功能
 
 ### 2.1 数据导入
+```
+import kashgari
 
-`import kashgari`
+from typing import Tuple
 
-`from typing import Tuple`
+from typing import List
 
-`from typing import List`
+from kashgari.logger import logger
 
-`from kashgari.logger import logger`
+from kashgari import utils
 
-`from kashgari import utils`
+from kashgari.corpus import ChineseDailyNerCorpus,DataReader
 
-`from kashgari.corpus import ChineseDailyNerCorpus,DataReader`
+def load_data(cls,subset_name: str = 'train',shuffle: bool = True) -> Tuple[List[List[str]], List[List[str]]]:
 
-`def load_data(cls,subset_name: str = 'train',shuffle: bool = True) -> Tuple[List[List[str]], List[List[str]]]:`
+​    corpus_path = 'path'
 
-​    `corpus_path = 'path'`
+​    if subset_name == 'train':
 
-​    `if subset_name == 'train':`
+​        file_path = os.path.join(corpus_path, 'example.train')
 
-​        `file_path = os.path.join(corpus_path, 'example.train')`
+​    elif subset_name == 'test':
 
-​    `elif subset_name == 'test':`
+​        file_path = os.path.join(corpus_path, 'example.test')
 
-​        `file_path = os.path.join(corpus_path, 'example.test')`
+​    else:
 
-​    `else:`
+​        file_path = os.path.join(corpus_path, 'example.dev')
 
-​        `file_path = os.path.join(corpus_path, 'example.dev')`
+​    x_data, y_data = DataReader.read_conll_format_file(file_path)
 
-​    `x_data, y_data = DataReader.read_conll_format_file(file_path)`
+​    if shuffle:
 
-​    `if shuffle:`
+​        x_data, y_data = utils.unison_shuffled_copies(x_data, y_data)
 
-​        `x_data, y_data = utils.unison_shuffled_copies(x_data, y_data)`
+​    logger.debug(f"loaded {len(x_data)} samples from {file_path}. Sample:\n"
 
-​    `logger.debug(f"loaded {len(x_data)} samples from {file_path}. Sample:\n"`
+​                    f"x[0]: {x_data[0]}\n"
 
-​                    `f"x[0]: {x_data[0]}\n"`
+​                    f"y[0]: {y_data[0]}")
 
-​                    `f"y[0]: {y_data[0]}")`
+​    return x_data, y_data
 
-​    `return x_data, y_data`
+train_x, train_y = load_data('train')
 
-`train_x, train_y = load_data('train')`
+valid_x, valid_y = load_data('valid')
 
-`valid_x, valid_y = load_data('valid')`
-
-`test_x, test_y = load_data('test')`
+test_x, test_y = load_data('test')
+```
 
 输入需要导入的path即可
 
@@ -86,14 +87,15 @@ description: 文章金句。
 适合其他基于transformer的wordembedding模型，如哈工大的robert，华为的NEZHA，需一次输入*vocab.txt*，*config.json*，*model.ckpt-100000*的路径以及最后的模型名称。同样支持bert系embedding的导入
 
 #### 2.2.3使用
+```
+from kashgari.embeddings import WordEmbedding, BertEmbedding, TransformerEmbedding
 
-`from kashgari.embeddings import WordEmbedding, BertEmbedding, TransformerEmbedding`
+bert_embed = BertEmbedding('<模型位置>')
 
-`bert_embed = BertEmbedding('<模型位置>')`
+model = BiLSTM_Model(bert_embed, sequence_length=100)
 
-`model = BiLSTM_Model(bert_embed, sequence_length=100)`
-
-`model.fit(train_x, train_y, valid_x, valid_y)`
+model.fit(train_x, train_y, valid_x, valid_y)
+```
 
 ### 2.3 labeling model
 
@@ -101,42 +103,44 @@ description: 文章金句。
 
 如：
 
-`from kashgari.tasks.labeling import BiGRU_Model,BiGRU_CRF_Model,BiLSTM_Model,BiLSTM_CRF_Model,CNN_LSTM_Model`
+```
+from kashgari.tasks.labeling import BiGRU_Model,BiGRU_CRF_Model,BiLSTM_Model,BiLSTM_CRF_Model,CNN_LSTM_Model
 
-`model = BiLSTM_Model()`
+model = BiLSTM_Model()
 
-`model.fit(train_x, train_y, valid_x, valid_y)`
+model.fit(train_x, train_y, valid_x, valid_y)
 
-`print(hyper)`
+print(hyper)
 
-`# {'layer_blstm': {'units': 128, 'return_sequences': True}, 'layer_dropout': {'rate': 0.4}, 'layer_time_distributed': {},layer_activation': {'activation': 'softmax'}}`
+# {'layer_blstm': {'units': 128, 'return_sequences': True}, 'layer_dropout': {'rate': 0.4}, 'layer_time_distributed': {},layer_activation': {'activation': 'softmax'}}
 
-`hyper['layer_blstm']['units'] = 32`
+hyper['layer_blstm']['units'] = 32
 
-`model = BiLSTM_Model(hyper_parameters=hyper)`
-
+model = BiLSTM_Model(hyper_parameters=hyper)
+```
 #### 2.3.2tensorbord 回调
+```
+model = BiLSTMModel()
 
-`model = BiLSTMModel()`
+tf_board_callback = keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1000)
 
-`tf_board_callback = keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1000)`
+# 每一步都会自动print准确率，召回率和F1score
 
-`# 每一步都会自动print准确率，召回率和F1score`
+eval_callback = EvalCallBack(kash_model=model,valid_x=valid_x,valid_y=valid_y,step=5)
 
-`eval_callback = EvalCallBack(kash_model=model,valid_x=valid_x,valid_y=valid_y,step=5)`
-
-`model.fit(train_x,train_y,valid_x,valid_y,batch_size=100,callbacks=[eval_callback, tf_board_callback])`
+model.fit(train_x,train_y,valid_x,valid_y,batch_size=100,callbacks=[eval_callback, tf_board_callback])
+```
 
 ## 3.其他功能
 
 可以用于文本翻译和带标签的文本分类
 
 ## 4.模型导入
+```
+loaded_model = kashgari.utils.load_model(<ModulePath>)
 
-`loaded_model = kashgari.utils.load_model(<ModulePath>)`
+s = input('请输入文本：')
 
-`s = input('请输入文本：')`
+a=list(s)
 
-`a=list(s)`
-
-`c=model.predict_entities([a])`
+c=model.predict_entities([a])
