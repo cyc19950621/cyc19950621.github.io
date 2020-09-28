@@ -33,7 +33,7 @@ from kashgari.corpus import ChineseDailyNerCorpus,DataReader
 
 def load_data(cls,subset_name: str = 'train',shuffle: bool = True) -> Tuple[List[List[str]], List[List[str]]]:
 
-​    corpus_path = 'path'
+​    corpus_path = '<path>'
 
 ​    if subset_name == 'train':
 
@@ -68,7 +68,7 @@ valid_x, valid_y = load_data('valid')
 test_x, test_y = load_data('test')
 ```
 
-输入需要导入的path即可
+输入需要导入的path即可，这里使用了kashgari内置的人民日报模型导入模块，用起来比较快捷
 
 
 
@@ -96,6 +96,7 @@ model = BiLSTM_Model(bert_embed, sequence_length=100)
 
 model.fit(train_x, train_y, valid_x, valid_y)
 ```
+
 
 ### 2.3 labeling model
 
