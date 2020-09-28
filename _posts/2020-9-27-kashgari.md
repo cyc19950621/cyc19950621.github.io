@@ -104,21 +104,20 @@ description: 文章金句。
 `from kashgari.tasks.labeling import BiGRU_Model,BiGRU_CRF_Model,BiLSTM_Model,BiLSTM_CRF_Model,CNN_LSTM_Model`
 
 `model = BiLSTM_Model()`
+
 `model.fit(train_x, train_y, valid_x, valid_y)`
 
-#### 2.3.1更改超参
-
-`hyper = BiLSTM_Model.default_hyper_parameters()`
 `print(hyper)`
 
-`# {'layer_blstm': {'units': 128, 'return_sequences': True}, 'layer_dropout': {'rate': 0.4}, 'layer_time_distributed': {}, 'layer_activation': {'activation': 'softmax'}}`
+`# {'layer_blstm': {'units': 128, 'return_sequences': True}, 'layer_dropout': {'rate': 0.4}, 'layer_time_distributed': {},layer_activation': {'activation': 'softmax'}}`
 
 `hyper['layer_blstm']['units'] = 32`
+
 `model = BiLSTM_Model(hyper_parameters=hyper)`
 
 #### 2.3.2tensorbord 回调
 
-`model = BLSTMModel()`
+`model = BiLSTMModel()`
 
 `tf_board_callback = keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1000)`
 
@@ -133,7 +132,11 @@ description: 文章金句。
 可以用于文本翻译和带标签的文本分类
 
 ## 4.模型导入
+
 `loaded_model = kashgari.utils.load_model(<ModulePath>)`
+
 `s = input('请输入文本：')`
+
 `a=list(s)`
+
 `c=model.predict_entities([a])`
