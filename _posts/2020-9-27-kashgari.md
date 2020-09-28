@@ -144,3 +144,4 @@ s = input('请输入文本：')
 a=list(s)
 
 c=model.predict_entities([a])
+```
